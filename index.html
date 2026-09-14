@@ -11,57 +11,24 @@
     :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     html, body { width: 100%; height: 100%; margin: 0; }
     body { overflow: hidden; background: #d7e1d3; }
-    #map {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
-    }
-    .property-control {
-      max-width: min(21rem, calc(100vw - 5rem));
-      border: 0;
-      border-radius: .75rem;
-      background: rgb(255 255 255 / 94%);
-      box-shadow: 0 2px 12px rgb(0 0 0 / 22%);
-      color: #172119;
-      padding: .75rem .85rem;
-      backdrop-filter: blur(5px);
-    }
-    .property-control > button {
-      display: flex; width: 100%; align-items: center; justify-content: space-between;
-      border: 0; padding: 0; background: transparent; color: inherit;
-      font: 700 .92rem/1.2 inherit; text-align: left; cursor: pointer;
-    }
+    #map { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; }
+    .property-control { max-width: min(21rem, calc(100vw - 5rem)); border: 0; border-radius: .75rem; background: rgb(255 255 255 / 94%); box-shadow: 0 2px 12px rgb(0 0 0 / 22%); color: #172119; padding: .75rem .85rem; backdrop-filter: blur(5px); }
+    .property-control > button { display: flex; width: 100%; align-items: center; justify-content: space-between; border: 0; padding: 0; background: transparent; color: inherit; font: 700 .92rem/1.2 inherit; text-align: left; cursor: pointer; }
     .property-control > button::after { content: "−"; margin-left: .75rem; font-size: 1.2rem; }
     .property-control.is-collapsed > button::after { content: "+"; }
     .property-control .panel-body { display: block; }
     .property-control.is-collapsed .panel-body { display: none; }
-    .property-control .summary {
-      margin: .65rem 0 .5rem;
-      padding: .55rem .6rem;
-      border-radius: .55rem;
-      background: #eef6ec;
-      border: 1px solid #b9d1b3;
-      font-size: .82rem;
-      line-height: 1.35;
-    }
+    .property-control .summary { margin: .65rem 0 .5rem; padding: .55rem .6rem; border-radius: .55rem; background: #eef6ec; border: 1px solid #b9d1b3; font-size: .82rem; line-height: 1.35; }
     .property-control .summary strong { display: block; font-size: .95rem; }
-    .property-control ul {
-      display: flex; flex-wrap: wrap; gap: .35rem; margin: .55rem 0 .45rem; padding: 0;
-      list-style: none;
-    }
-    .property-control li {
-      border: 1px solid #b46a37; border-radius: 999px; background: #fff8ee;
-      padding: .22rem .48rem; font-size: .78rem; font-weight: 650; cursor: pointer;
-      user-select: none;
-    }
+    .property-control ul { display: flex; flex-wrap: wrap; gap: .35rem; margin: .55rem 0 .45rem; padding: 0; list-style: none; }
+    .property-control li { border: 1px solid #b46a37; border-radius: 999px; background: #fff8ee; padding: .22rem .48rem; font-size: .78rem; font-weight: 650; cursor: pointer; user-select: none; }
     .property-control li.selected { border-color: #2f6f3e; background: #dfeedd; color: #174a25; }
     .property-control li.missing { border-color: #999; background: #f2f2f2; color: #777; cursor: default; }
     .property-control p { margin: .45rem 0 0; color: #555; font-size: .72rem; line-height: 1.35; }
     .property-control .hint { color: #334; }
     .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
     .leaflet-control-attribution { max-width: calc(100vw - 1rem); font-size: 10px; }
+    .leaflet-interactive { cursor: pointer; }
     @media (max-width: 600px) {
       .leaflet-top { top: env(safe-area-inset-top); }
       .leaflet-bottom { bottom: env(safe-area-inset-bottom); }
@@ -78,49 +45,25 @@
   <script>
     const TARGET_DAA = 10606;
     const STORAGE_KEY = 'grimstveit-selected-properties-v1';
-
     const mapElement = document.getElementById('map');
-    const map = L.map('map', {
-      zoomControl: false,
-      crs: L.CRS.EPSG3857
-    });
+    const map = L.map('map', { zoomControl: false, crs: L.CRS.EPSG3857 });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-
     map.setView([59.16, 8.50], 11);
 
     L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
-      maxZoom: 18,
-      tileSize: 256,
-      zoomOffset: 0,
+      maxZoom: 18, tileSize: 256, zoomOffset: 0,
       attribution: '<a href="https://www.kartverket.no/">Kartverket</a>'
     }).addTo(map);
 
     const resizeObserver = new ResizeObserver(() => map.invalidateSize({ pan: false }));
     resizeObserver.observe(mapElement);
 
-    const unselectedStyle = {
-      color: '#b5261e',
-      weight: 2.2,
-      opacity: 0.95,
-      fillColor: '#e89347',
-      fillOpacity: 0.08,
-      lineJoin: 'round'
-    };
-
-    const selectedStyle = {
-      color: '#1f6f35',
-      weight: 3.5,
-      opacity: 1,
-      fillColor: '#4f9a5d',
-      fillOpacity: 0.24,
-      lineJoin: 'round'
-    };
+    const unselectedStyle = { color: '#b5261e', weight: 2.2, opacity: 0.95, fillColor: '#e89347', fillOpacity: 0.08, lineJoin: 'round' };
+    const selectedStyle = { color: '#1f6f35', weight: 3.5, opacity: 1, fillColor: '#4f9a5d', fillOpacity: 0.24, lineJoin: 'round' };
 
     const matrikkelEnheter = [
-      [10, 1], [10, 2], [10, 7],
-      [11, 2], [11, 84],
-      [12, 3], [12, 4], [12, 5], [12, 6], [12, 8],
-      [13, 4], [19, 10], [8, 1]
+      [10, 1], [10, 2], [10, 7], [11, 2], [11, 84],
+      [12, 3], [12, 4], [12, 5], [12, 6], [12, 8], [13, 4], [19, 10], [8, 1]
     ];
 
     const selectedProperties = new Set(loadSavedSelection());
@@ -133,58 +76,39 @@
 
     async function loadOfficialPropertyBoundaries() {
       const allFeatures = [];
-      const missing = [];
-
-      const results = await Promise.allSettled(
-        matrikkelEnheter.map(async ([gnr, bnr]) => {
-          const url = new URL('https://api.kartverket.no/eiendom/v1/geokoding');
-          url.searchParams.set('kommunenummer', '4030');
-          url.searchParams.set('gardsnummer', gnr);
-          url.searchParams.set('bruksnummer', bnr);
-          url.searchParams.set('omrade', 'true');
-          url.searchParams.set('utkoordsys', '4258');
-
-          const response = await fetch(url);
-          if (!response.ok) throw new Error(`${gnr}/${bnr}: HTTP ${response.status}`);
-          const data = await response.json();
-          const features = (data.features || [])
-            .filter(feature => feature.geometry && ['Polygon', 'MultiPolygon'].includes(feature.geometry.type))
-            .map(feature => ({
-              ...feature,
-              properties: { ...feature.properties, gnr, bnr }
-            }));
-
-          if (!features.length) throw new Error(`${gnr}/${bnr}: ingen flater returnert`);
-          return { gnr, bnr, features };
-        })
-      );
+      const results = await Promise.allSettled(matrikkelEnheter.map(async ([gnr, bnr]) => {
+        const url = new URL('https://api.kartverket.no/eiendom/v1/geokoding');
+        url.searchParams.set('kommunenummer', '4030');
+        url.searchParams.set('gardsnummer', gnr);
+        url.searchParams.set('bruksnummer', bnr);
+        url.searchParams.set('omrade', 'true');
+        url.searchParams.set('utkoordsys', '4258');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`${gnr}/${bnr}: HTTP ${response.status}`);
+        const data = await response.json();
+        const features = (data.features || [])
+          .filter(feature => feature.geometry && ['Polygon', 'MultiPolygon'].includes(feature.geometry.type))
+          .map(feature => ({ ...feature, properties: { ...feature.properties, gnr, bnr } }));
+        if (!features.length) throw new Error(`${gnr}/${bnr}: ingen flater returnert`);
+        return { gnr, bnr, features };
+      }));
 
       results.forEach((result, index) => {
         const [gnr, bnr] = matrikkelEnheter[index];
         const key = `${gnr}/${bnr}`;
-        if (result.status === 'fulfilled') {
-          allFeatures.push(...result.value.features);
-        } else {
-          console.warn(result.reason);
-          missing.push(key);
-          missingProperties.add(key);
-          selectedProperties.delete(key);
-        }
+        if (result.status === 'fulfilled') allFeatures.push(...result.value.features);
+        else { console.warn(result.reason); missingProperties.add(key); selectedProperties.delete(key); }
       });
 
-      if (!allFeatures.length) {
-        console.error('Ingen eiendomsgrenser kunne lastes fra Kartverket.');
-        updatePropertyControl();
-        return;
-      }
+      if (!allFeatures.length) { console.error('Ingen eiendomsgrenser kunne lastes fra Kartverket.'); updatePropertyControl(); return; }
 
       allFeatures.forEach(feature => {
         const key = `${feature.properties.gnr}/${feature.properties.bnr}`;
-        const areaDaa = geometryAreaSquareMeters(feature.geometry) / 1000;
-        propertyAreasDaa.set(key, (propertyAreasDaa.get(key) || 0) + areaDaa);
+        propertyAreasDaa.set(key, (propertyAreasDaa.get(key) || 0) + geometryAreaSquareMeters(feature.geometry) / 1000);
       });
 
       const propertiesLayer = L.geoJSON({ type: 'FeatureCollection', features: allFeatures }, {
+        interactive: true,
         style(feature) {
           const key = `${feature.properties.gnr}/${feature.properties.bnr}`;
           return selectedProperties.has(key) ? selectedStyle : unselectedStyle;
@@ -193,33 +117,24 @@
           const key = `${feature.properties.gnr}/${feature.properties.bnr}`;
           if (!propertyLayers.has(key)) propertyLayers.set(key, []);
           propertyLayers.get(key).push(layer);
-
           layer.on('click', event => {
-            L.DomEvent.stopPropagation(event);
+            if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
             toggleProperty(key);
           });
-
           layer.bindTooltip(`Gnr/Bnr ${key}`, { sticky: true, direction: 'top' });
         }
       }).addTo(map);
 
       const bounds = propertiesLayer.getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 });
-      }
-
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 });
       saveSelection();
       updatePropertyControl();
     }
 
     function toggleProperty(key) {
       if (missingProperties.has(key) || !propertyLayers.has(key)) return;
-      if (selectedProperties.has(key)) selectedProperties.delete(key);
-      else selectedProperties.add(key);
-
-      applyPropertyStyle(key);
-      saveSelection();
-      updatePropertyControl();
+      if (selectedProperties.has(key)) selectedProperties.delete(key); else selectedProperties.add(key);
+      applyPropertyStyle(key); saveSelection(); updatePropertyControl();
     }
 
     function applyPropertyStyle(key) {
@@ -232,30 +147,16 @@
 
     function selectedAreaDaa() {
       let total = 0;
-      selectedProperties.forEach(key => {
-        total += propertyAreasDaa.get(key) || 0;
-      });
+      selectedProperties.forEach(key => { total += propertyAreasDaa.get(key) || 0; });
       return total;
     }
 
-    function formatDaa(value) {
-      return Math.round(value).toLocaleString('nb-NO');
-    }
-
+    function formatDaa(value) { return Math.round(value).toLocaleString('nb-NO'); }
     function loadSavedSelection() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
+      try { const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); return Array.isArray(parsed) ? parsed : []; }
+      catch { return []; }
     }
-
-    function saveSelection() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([...selectedProperties]));
-      } catch {}
-    }
+    function saveSelection() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...selectedProperties])); } catch {} }
 
     let propertyPanel;
     function addPropertyControl(entries) {
@@ -270,19 +171,15 @@
             <ul>${entries.map(([gnr, bnr]) => `<li data-key="${gnr}/${bnr}">${gnr}/${bnr}</li>`).join('')}</ul>
             <p class="status">Henter offisielle teiggeometrier fra Kartverket…</p>
           </div>`;
-
         L.DomEvent.disableClickPropagation(propertyPanel);
         L.DomEvent.disableScrollPropagation(propertyPanel);
-
         propertyPanel.querySelector(':scope > button').addEventListener('click', event => {
           const collapsed = propertyPanel.classList.toggle('is-collapsed');
           event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
         });
-
         propertyPanel.querySelectorAll('li[data-key]').forEach(item => {
-          item.addEventListener('click', () => toggleProperty(item.dataset.key));
+          item.addEventListener('click', event => { event.stopPropagation(); toggleProperty(item.dataset.key); });
         });
-
         return propertyPanel;
       };
       control.addTo(map);
@@ -290,7 +187,6 @@
 
     function updatePropertyControl() {
       if (!propertyPanel) return;
-
       propertyPanel.querySelectorAll('li[data-key]').forEach(item => {
         const key = item.dataset.key;
         item.classList.toggle('selected', selectedProperties.has(key));
@@ -299,53 +195,38 @@
         const area = propertyAreasDaa.get(key);
         item.title = area ? `${key}: ca. ${formatDaa(area)} daa` : key;
       });
-
       const area = selectedAreaDaa();
       const difference = area - TARGET_DAA;
       const diffText = propertyAreasDaa.size
-        ? `${difference === 0 ? 'Treffer målarealet.' : `${difference > 0 ? '+' : '−'}${formatDaa(Math.abs(difference))} daa fra målet.`}`
+        ? (difference === 0 ? 'Treffer målarealet.' : `${difference > 0 ? '+' : '−'}${formatDaa(Math.abs(difference))} daa fra målet.`)
         : 'Beregner areal…';
-
-      propertyPanel.querySelector('.summary').innerHTML = `
-        <strong>Valgt: ${formatDaa(area)} daa</strong>
-        Mål: ${TARGET_DAA.toLocaleString('nb-NO')} daa · ${diffText}`;
-
+      propertyPanel.querySelector('.summary').innerHTML = `<strong>Valgt: ${formatDaa(area)} daa</strong>Mål: ${TARGET_DAA.toLocaleString('nb-NO')} daa · ${diffText}`;
       const missing = [...missingProperties];
       propertyPanel.querySelector('.status').textContent = propertyAreasDaa.size
-        ? (missing.length
-          ? `Kartverket-data lastet. Ingen geometri funnet for: ${missing.join(', ')}.`
-          : 'Kartverket-data lastet. Valgene lagres automatisk i denne nettleseren.')
+        ? (missing.length ? `Kartverket-data lastet. Ingen geometri funnet for: ${missing.join(', ')}.` : 'Kartverket-data lastet. Valgene lagres automatisk i denne nettleseren.')
         : 'Henter offisielle teiggeometrier fra Kartverket…';
     }
 
     function geometryAreaSquareMeters(geometry) {
       if (!geometry) return 0;
       if (geometry.type === 'Polygon') return polygonArea(geometry.coordinates);
-      if (geometry.type === 'MultiPolygon') {
-        return geometry.coordinates.reduce((sum, polygon) => sum + polygonArea(polygon), 0);
-      }
+      if (geometry.type === 'MultiPolygon') return geometry.coordinates.reduce((sum, polygon) => sum + polygonArea(polygon), 0);
       return 0;
     }
-
     function polygonArea(rings) {
       if (!rings?.length) return 0;
       const outer = Math.abs(ringArea(rings[0]));
       const holes = rings.slice(1).reduce((sum, ring) => sum + Math.abs(ringArea(ring)), 0);
       return Math.max(0, outer - holes);
     }
-
     function ringArea(coords) {
       if (!coords || coords.length < 3) return 0;
-      const R = 6378137;
-      const toRad = Math.PI / 180;
+      const R = 6378137, toRad = Math.PI / 180;
       let area = 0;
       for (let i = 0; i < coords.length; i++) {
-        const lower = coords[i];
-        const upper = coords[(i + 1) % coords.length];
-        const lon1 = lower[0] * toRad;
-        const lon2 = upper[0] * toRad;
-        const lat1 = lower[1] * toRad;
-        const lat2 = upper[1] * toRad;
+        const lower = coords[i], upper = coords[(i + 1) % coords.length];
+        const lon1 = lower[0] * toRad, lon2 = upper[0] * toRad;
+        const lat1 = lower[1] * toRad, lat2 = upper[1] * toRad;
         area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
       }
       return area * R * R / 2;
