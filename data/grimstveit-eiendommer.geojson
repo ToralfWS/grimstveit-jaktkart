@@ -1,0 +1,18 @@
+{
+  "type": "FeatureCollection",
+  "name": "Grimstveit jaktområde",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 10, "bnr": 1 }, "geometry": { "type": "Polygon", "coordinates": [[[8.448,59.178],[8.466,59.181],[8.471,59.169],[8.451,59.166],[8.448,59.178]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 10, "bnr": 2 }, "geometry": { "type": "Polygon", "coordinates": [[[8.466,59.181],[8.486,59.178],[8.487,59.166],[8.471,59.169],[8.466,59.181]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 10, "bnr": 7 }, "geometry": { "type": "Polygon", "coordinates": [[[8.486,59.178],[8.507,59.183],[8.509,59.168],[8.487,59.166],[8.486,59.178]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 11, "bnr": 2 }, "geometry": { "type": "Polygon", "coordinates": [[[8.507,59.183],[8.528,59.176],[8.526,59.165],[8.509,59.168],[8.507,59.183]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 12, "bnr": 4 }, "geometry": { "type": "Polygon", "coordinates": [[[8.451,59.166],[8.471,59.169],[8.473,59.155],[8.454,59.153],[8.451,59.166]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 12, "bnr": 5 }, "geometry": { "type": "Polygon", "coordinates": [[[8.471,59.169],[8.487,59.166],[8.491,59.154],[8.473,59.155],[8.471,59.169]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 12, "bnr": 6 }, "geometry": { "type": "Polygon", "coordinates": [[[8.487,59.166],[8.509,59.168],[8.508,59.153],[8.491,59.154],[8.487,59.166]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 12, "bnr": 8 }, "geometry": { "type": "Polygon", "coordinates": [[[8.509,59.168],[8.526,59.165],[8.531,59.151],[8.508,59.153],[8.509,59.168]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 19, "bnr": 10 }, "geometry": { "type": "Polygon", "coordinates": [[[8.454,59.153],[8.473,59.155],[8.469,59.141],[8.449,59.143],[8.454,59.153]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 13, "bnr": 4 }, "geometry": { "type": "Polygon", "coordinates": [[[8.473,59.155],[8.491,59.154],[8.494,59.139],[8.469,59.141],[8.473,59.155]]] } },
+    { "type": "Feature", "properties": { "kommune": "4030", "gnr": 8, "bnr": 1 }, "geometry": { "type": "Polygon", "coordinates": [[[8.491,59.154],[8.531,59.151],[8.526,59.137],[8.494,59.139],[8.491,59.154]]] } }
+  ]
+}

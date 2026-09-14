@@ -1,106 +1,118 @@
 <!doctype html>
 <html lang="no">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Grimstveit jaktområde – første karttest</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f2e8">
+  <title>Grimstveit jaktkart</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIINfQ3yn5S9mMZc7eAonR0pprQ3KNyV1M7k=" crossorigin=""/>
+        integrity="sha256-p4NxAoJBhIINfQ3yn5S9mZc7EonR0pprQ3KNyV1M7k=" crossorigin="">
   <style>
-    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    #map { height: 100%; width: 100%; }
-    .panel {
-      position: absolute; z-index: 1000; left: 12px; top: 12px; right: 12px;
-      max-width: 520px; background: rgba(255,255,255,.95); border-radius: 14px;
-      padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.18);
+    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    html, body, #map { width: 100%; height: 100%; margin: 0; }
+    body { overflow: hidden; background: #d7e1d3; }
+    #map { position: fixed; inset: 0; }
+    .property-control {
+      max-width: min(17rem, calc(100vw - 5rem));
+      border: 0;
+      border-radius: .75rem;
+      background: rgb(255 255 255 / 92%);
+      box-shadow: 0 2px 12px rgb(0 0 0 / 22%);
+      color: #172119;
+      padding: .7rem .8rem;
+      backdrop-filter: blur(5px);
     }
-    .panel h1 { font-size: 18px; margin: 0 0 6px; }
-    .panel p { margin: 4px 0; font-size: 13px; line-height: 1.35; }
-    .status { margin-top: 8px; font-size: 12px; max-height: 120px; overflow:auto; }
-    .ok { color: #176b2b; }
-    .err { color: #9b1c1c; }
-    .leaflet-control-layers { margin-top: 135px !important; }
+    .property-control button {
+      display: flex; width: 100%; align-items: center; justify-content: space-between;
+      border: 0; padding: 0; background: transparent; color: inherit;
+      font: 700 .9rem/1.2 inherit; text-align: left; cursor: pointer;
+    }
+    .property-control button::after { content: "−"; margin-left: .75rem; font-size: 1.2rem; }
+    .property-control.is-collapsed button::after { content: "+"; }
+    .property-control ul {
+      display: flex; flex-wrap: wrap; gap: .35rem; margin: .65rem 0 .25rem; padding: 0;
+      list-style: none;
+    }
+    .property-control.is-collapsed ul, .property-control.is-collapsed p { display: none; }
+    .property-control li {
+      border: 1px solid #b46a37; border-radius: 999px; background: #fff8ee;
+      padding: .18rem .45rem; font-size: .78rem; font-weight: 650;
+    }
+    .property-control p { margin: .55rem 0 0; color: #555; font-size: .72rem; line-height: 1.35; }
+    .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
+    .leaflet-control-attribution { max-width: calc(100vw - 1rem); font-size: 10px; }
+    .leaflet-popup-content { margin: .75rem 1rem; }
+    @media (max-width: 600px) {
+      .leaflet-top { top: env(safe-area-inset-top); }
+      .leaflet-bottom { bottom: env(safe-area-inset-bottom); }
+      .leaflet-left { left: env(safe-area-inset-left); }
+      .leaflet-right { right: env(safe-area-inset-right); }
+      .property-control { padding: .65rem .7rem; }
+    }
   </style>
 </head>
 <body>
-<div id="map"></div>
-<div class="panel">
-  <h1>Grimstveit jaktområde – første test</h1>
-  <p>Henter eiendomsflater direkte fra Kartverkets åpne eiendoms-API.</p>
-  <p><b>Nissedal kommune 4030</b> – 12 matrikkelenheter fra arket.</p>
-  <div id="summary" class="status">Laster …</div>
-</div>
+  <main id="map" aria-label="Kart over Grimstveit jaktområde"></main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const map = L.map('map', { zoomControl: false });
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-const properties = [
-  [10,1],[10,2],[10,7],
-  [11,2],[11,84],
-  [12,4],[12,5],[12,6],[12,8],
-  [19,10],[13,4],[8,1]
-];
+    L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+      maxZoom: 18,
+      attribution: '<a href="https://www.kartverket.no/">Kartverket</a>',
+      crossOrigin: true
+    }).addTo(map);
 
-const map = L.map('map', { zoomControl: true }).setView([59.16, 8.50], 11);
+    const propertyStyle = {
+      color: '#b5261e',
+      weight: 3,
+      opacity: 1,
+      fillColor: '#e89347',
+      fillOpacity: 0.13,
+      lineJoin: 'round'
+    };
 
-const topo = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap-bidragsytere'
-}).addTo(map);
+    fetch('data/grimstveit-eiendommer.geojson')
+      .then(response => {
+        if (!response.ok) throw new Error(`Kunne ikke laste kartdata (${response.status})`);
+        return response.json();
+      })
+      .then(data => {
+        const properties = L.geoJSON(data, {
+          style: propertyStyle,
+          onEachFeature(feature, layer) {
+            const { gnr, bnr } = feature.properties;
+            layer.bindPopup(`<strong>Gnr/Bnr ${gnr}/${bnr}</strong><br>Nissedal kommune`);
+          }
+        }).addTo(map);
+        map.fitBounds(properties.getBounds(), { padding: [24, 24], maxZoom: 15 });
+        addPropertyControl(data.features);
+      })
+      .catch(error => {
+        console.error(error);
+        map.setView([59.16, 8.50], 11);
+      });
 
-const group = L.featureGroup().addTo(map);
-const summary = document.getElementById('summary');
-
-function apiUrl(g,b) {
-  return `https://api.kartverket.no/eiendom/v1/geokoding?kommunenummer=4030&gardsnummer=${g}&bruksnummer=${b}&omrade=true&utkoordsys=4258`;
-}
-
-async function loadOne(g,b) {
-  const label = `${g}/${b}`;
-  try {
-    const r = await fetch(apiUrl(g,b));
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-    const count = (data.features || []).length;
-    if (!count) return {label, ok:false, msg:'ingen flater returnert'};
-
-    const layer = L.geoJSON(data, {
-      style: {
-        color: '#d62728',
-        weight: 2.5,
-        opacity: 0.9,
-        fillColor: '#d62728',
-        fillOpacity: 0.12
-      },
-      onEachFeature: (feature, lyr) => {
-        const p = feature.properties || {};
-        lyr.bindPopup(
-          `<b>Eiendom ${label}</b><br>` +
-          `${p.matrikkelnummertekst || ''}` +
-          (p.hovedområde !== undefined ? `<br>Hovedområde: ${p.hovedområde ? 'ja' : 'nei'}` : '') +
-          (p.nøyaktighetsklasseteig ? `<br>Nøyaktighet: ${p.nøyaktighetsklasseteig}` : '')
-        );
-      }
-    });
-    layer.addTo(group);
-    return {label, ok:true, msg:`${count} flate${count===1?'':'r'}`};
-  } catch(e) {
-    return {label, ok:false, msg:e.message};
-  }
-}
-
-(async () => {
-  const results = await Promise.all(properties.map(([g,b]) => loadOne(g,b)));
-  if (group.getLayers().length) {
-    map.fitBounds(group.getBounds(), {padding:[25,25]});
-  }
-  const ok = results.filter(x=>x.ok).length;
-  summary.innerHTML =
-    `<b>${ok} av ${properties.length}</b> eiendommer hentet.<br>` +
-    results.map(x =>
-      `<span class="${x.ok?'ok':'err'}">${x.ok?'✓':'✗'} ${x.label}: ${x.msg}</span>`
-    ).join('<br>');
-})();
-</script>
+    function addPropertyControl(features) {
+      const control = L.control({ position: 'topleft' });
+      control.onAdd = () => {
+        const panel = L.DomUtil.create('section', 'property-control');
+        const labels = features.map(({ properties }) => `${properties.gnr}/${properties.bnr}`);
+        panel.innerHTML = `
+          <button type="button" aria-expanded="true">Eiendommer (${labels.length})</button>
+          <ul>${labels.map(label => `<li>${label}</li>`).join('')}</ul>
+          <p>Gnr/Bnr 11/84 mangler og er ikke tatt med i denne versjonen.</p>`;
+        L.DomEvent.disableClickPropagation(panel);
+        panel.querySelector('button').addEventListener('click', event => {
+          const collapsed = panel.classList.toggle('is-collapsed');
+          event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
+        });
+        return panel;
+      };
+      control.addTo(map);
+    }
+  </script>
 </body>
 </html>
