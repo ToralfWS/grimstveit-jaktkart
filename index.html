@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Grimstveit jaktområde – første karttest</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQ3yn5S9mMZc7eAonR0pprQ3KNyV1M7k=" crossorigin=""/>
+  <style>
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    #map { height: 100%; width: 100%; }
+    .panel {
+      position: absolute; z-index: 1000; left: 12px; top: 12px; right: 12px;
+      max-width: 520px; background: rgba(255,255,255,.95); border-radius: 14px;
+      padding: 12px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.18);
+    }
+    .panel h1 { font-size: 18px; margin: 0 0 6px; }
+    .panel p { margin: 4px 0; font-size: 13px; line-height: 1.35; }
+    .status { margin-top: 8px; font-size: 12px; max-height: 120px; overflow:auto; }
+    .ok { color: #176b2b; }
+    .err { color: #9b1c1c; }
+    .leaflet-control-layers { margin-top: 135px !important; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <h1>Grimstveit jaktområde – første test</h1>
+  <p>Henter eiendomsflater direkte fra Kartverkets åpne eiendoms-API.</p>
+  <p><b>Nissedal kommune 4030</b> – 12 matrikkelenheter fra arket.</p>
+  <div id="summary" class="status">Laster …</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const properties = [
+  [10,1],[10,2],[10,7],
+  [11,2],[11,84],
+  [12,4],[12,5],[12,6],[12,8],
+  [19,10],[13,4],[8,1]
+];
+
+const map = L.map('map', { zoomControl: true }).setView([59.16, 8.50], 11);
+
+const topo = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap-bidragsytere'
+}).addTo(map);
+
+const group = L.featureGroup().addTo(map);
+const summary = document.getElementById('summary');
+
+function apiUrl(g,b) {
+  return `https://api.kartverket.no/eiendom/v1/geokoding?kommunenummer=4030&gardsnummer=${g}&bruksnummer=${b}&omrade=true&utkoordsys=4258`;
+}
+
+async function loadOne(g,b) {
+  const label = `${g}/${b}`;
+  try {
+    const r = await fetch(apiUrl(g,b));
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    const count = (data.features || []).length;
+    if (!count) return {label, ok:false, msg:'ingen flater returnert'};
+
+    const layer = L.geoJSON(data, {
+      style: {
+        color: '#d62728',
+        weight: 2.5,
+        opacity: 0.9,
+        fillColor: '#d62728',
+        fillOpacity: 0.12
+      },
+      onEachFeature: (feature, lyr) => {
+        const p = feature.properties || {};
+        lyr.bindPopup(
+          `<b>Eiendom ${label}</b><br>` +
+          `${p.matrikkelnummertekst || ''}` +
+          (p.hovedområde !== undefined ? `<br>Hovedområde: ${p.hovedområde ? 'ja' : 'nei'}` : '') +
+          (p.nøyaktighetsklasseteig ? `<br>Nøyaktighet: ${p.nøyaktighetsklasseteig}` : '')
+        );
+      }
+    });
+    layer.addTo(group);
+    return {label, ok:true, msg:`${count} flate${count===1?'':'r'}`};
+  } catch(e) {
+    return {label, ok:false, msg:e.message};
+  }
+}
+
+(async () => {
+  const results = await Promise.all(properties.map(([g,b]) => loadOne(g,b)));
+  if (group.getLayers().length) {
+    map.fitBounds(group.getBounds(), {padding:[25,25]});
+  }
+  const ok = results.filter(x=>x.ok).length;
+  summary.innerHTML =
+    `<b>${ok} av ${properties.length}</b> eiendommer hentet.<br>` +
+    results.map(x =>
+      `<span class="${x.ok?'ok':'err'}">${x.ok?'✓':'✗'} ${x.label}: ${x.msg}</span>`
+    ).join('<br>');
+})();
+</script>
+</body>
+</html>
