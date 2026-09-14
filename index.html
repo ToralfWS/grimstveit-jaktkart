@@ -5,321 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f2e8">
   <title>Grimstveit jaktkart</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
-    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    html, body { width: 100%; height: 100%; margin: 0; }
-    body { overflow: hidden; background: #d7e1d3; }
-    #map { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; }
-
-    .property-control {
-      max-width: min(22rem, calc(100vw - 5rem));
-      border: 0; border-radius: .75rem;
-      background: rgb(255 255 255 / 95%);
-      box-shadow: 0 2px 12px rgb(0 0 0 / 22%);
-      color: #172119; padding: .75rem .85rem;
-      backdrop-filter: blur(5px);
-    }
-    .property-control > button {
-      display: flex; width: 100%; align-items: center; justify-content: space-between;
-      border: 0; padding: 0; background: transparent; color: inherit;
-      font: 700 .92rem/1.2 inherit; text-align: left; cursor: pointer;
-    }
-    .property-control > button::after { content: "−"; margin-left: .75rem; font-size: 1.2rem; }
-    .property-control.is-collapsed > button::after { content: "+"; }
-    .property-control .panel-body { display: block; }
-    .property-control.is-collapsed .panel-body { display: none; }
-    .property-control .summary {
-      margin: .65rem 0 .5rem; padding: .55rem .6rem;
-      border-radius: .55rem; background: #eef6ec; border: 1px solid #b9d1b3;
-      font-size: .82rem; line-height: 1.35;
-    }
-    .property-control .summary strong { display: block; font-size: .95rem; }
-    .property-control .property-buttons {
-      display: flex; flex-wrap: wrap; gap: .35rem; margin: .55rem 0 .45rem;
-    }
-    .property-control .property-button {
-      appearance: none; border: 1px solid #b46a37; border-radius: 999px;
-      background: #fff8ee; color: #172119; padding: .26rem .52rem;
-      font: 650 .78rem/1.1 inherit; cursor: pointer; user-select: none;
-      touch-action: manipulation;
-    }
-    .property-control .property-button:hover { background: #fff0db; }
-    .property-control .property-button.selected { border-color: #2f6f3e; background: #dfeedd; color: #174a25; }
-    .property-control .property-button.missing { border-color: #999; background: #f2f2f2; color: #777; cursor: default; }
-    .property-control p { margin: .45rem 0 0; color: #555; font-size: .72rem; line-height: 1.35; }
-    .property-control .hint { color: #334; }
-    .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
-    .leaflet-control-attribution { max-width: calc(100vw - 1rem); font-size: 10px; }
-    .leaflet-interactive { cursor: pointer; }
-
-    @media (max-width: 600px) {
-      .leaflet-top { top: env(safe-area-inset-top); }
-      .leaflet-bottom { bottom: env(safe-area-inset-bottom); }
-      .leaflet-left { left: env(safe-area-inset-left); }
-      .leaflet-right { right: env(safe-area-inset-right); }
-      .property-control { padding: .65rem .7rem; max-width: min(19rem, calc(100vw - 4.5rem)); }
-    }
+    :root { color-scheme: light; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    html,body { width:100%; height:100%; margin:0; } body { overflow:hidden; background:#d7e1d3; }
+    #map { position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; }
+    .property-control { max-width:min(24rem,calc(100vw - 5rem)); border:0; border-radius:.75rem; background:rgb(255 255 255 / 95%); box-shadow:0 2px 12px rgb(0 0 0 / 22%); color:#172119; padding:.75rem .85rem; backdrop-filter:blur(5px); }
+    .property-control > button { display:flex; width:100%; align-items:center; justify-content:space-between; border:0; padding:0; background:transparent; color:inherit; font:700 .92rem/1.2 inherit; text-align:left; cursor:pointer; }
+    .property-control > button::after { content:"−"; margin-left:.75rem; font-size:1.2rem; } .property-control.is-collapsed > button::after { content:"+"; }
+    .property-control .panel-body { display:block; } .property-control.is-collapsed .panel-body { display:none; }
+    .property-control .summary { margin:.65rem 0 .5rem; padding:.55rem .6rem; border-radius:.55rem; background:#eef6ec; border:1px solid #b9d1b3; font-size:.82rem; line-height:1.35; }
+    .property-control .summary strong { display:block; font-size:.95rem; }
+    .property-buttons { display:flex; flex-wrap:wrap; gap:.35rem; margin:.55rem 0 .45rem; }
+    .property-button { appearance:none; border:1px solid #b46a37; border-radius:999px; background:#fff8ee; color:#172119; padding:.26rem .52rem; font:650 .78rem/1.1 inherit; cursor:pointer; touch-action:manipulation; }
+    .property-button.selected { border-color:#2f6f3e; background:#dfeedd; color:#174a25; } .property-button.missing { border-color:#999; background:#f2f2f2; color:#777; cursor:default; }
+    .property-control p { margin:.45rem 0 0; color:#555; font-size:.72rem; line-height:1.35; } .hint { color:#334!important; }
+    .leaflet-control-zoom a { width:36px; height:36px; line-height:36px; } .leaflet-control-attribution { max-width:calc(100vw - 1rem); font-size:10px; } .leaflet-interactive { cursor:pointer; }
+    @media(max-width:600px){.leaflet-top{top:env(safe-area-inset-top)}.leaflet-bottom{bottom:env(safe-area-inset-bottom)}.leaflet-left{left:env(safe-area-inset-left)}.leaflet-right{right:env(safe-area-inset-right)}.property-control{padding:.65rem .7rem;max-width:min(21rem,calc(100vw - 4.5rem))}}
   </style>
 </head>
 <body>
-  <main id="map" aria-label="Kart over Grimstveit jaktområde"></main>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script>
-    const TARGET_DAA = 10606;
-    const STORAGE_KEY = 'grimstveit-selected-properties-v1';
-
-    const matrikkelEnheter = [
-      [10, 1], [10, 2], [10, 7], [11, 2], [11, 84],
-      [12, 3], [12, 4], [12, 5], [12, 6], [12, 8],
-      [13, 4], [19, 10], [8, 1]
-    ];
-
-    const mapElement = document.getElementById('map');
-    const map = L.map('map', { zoomControl: false, crs: L.CRS.EPSG3857 });
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    map.setView([59.16, 8.50], 11);
-
-    L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
-      maxZoom: 18,
-      attribution: '<a href="https://www.kartverket.no/">Kartverket</a>'
-    }).addTo(map);
-
-    new ResizeObserver(() => map.invalidateSize({ pan: false })).observe(mapElement);
-
-    const unselectedStyle = {
-      color: '#b5261e', weight: 2.2, opacity: .95,
-      fillColor: '#e89347', fillOpacity: .10, lineJoin: 'round'
-    };
-    const selectedStyle = {
-      color: '#1f6f35', weight: 3.5, opacity: 1,
-      fillColor: '#4f9a5d', fillOpacity: .30, lineJoin: 'round'
-    };
-
-    const selectedProperties = new Set(loadSavedSelection());
-    const propertyLayers = new Map();
-    const propertyAreasDaa = new Map();
-    const missingProperties = new Set();
-    const loadedProperties = new Set();
-    let combinedBounds = null;
-    let propertyPanel;
-
-    addPropertyControl();
-    loadPropertiesProgressively();
-
-    async function loadPropertiesProgressively() {
-      const jobs = matrikkelEnheter.map(([gnr, bnr]) => loadOneProperty(gnr, bnr));
-      await Promise.allSettled(jobs);
-
-      saveSelection();
-      updatePropertyControl();
-
-      if (combinedBounds && combinedBounds.isValid()) {
-        map.fitBounds(combinedBounds, { padding: [24, 24], maxZoom: 14 });
-      }
-    }
-
-    async function loadOneProperty(gnr, bnr) {
-      const key = `${gnr}/${bnr}`;
-      try {
-        const url = new URL('https://api.kartverket.no/eiendom/v1/geokoding');
-        url.searchParams.set('kommunenummer', '4030');
-        url.searchParams.set('gardsnummer', gnr);
-        url.searchParams.set('bruksnummer', bnr);
-        url.searchParams.set('omrade', 'true');
-        url.searchParams.set('utkoordsys', '4258');
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        const features = (data.features || [])
-          .filter(feature => feature.geometry && ['Polygon', 'MultiPolygon'].includes(feature.geometry.type))
-          .map(feature => ({
-            ...feature,
-            properties: { ...feature.properties, gnr, bnr }
-          }));
-
-        if (!features.length) throw new Error('ingen flater returnert');
-
-        const areaDaa = features.reduce((sum, feature) => sum + geometryAreaSquareMeters(feature.geometry) / 1000, 0);
-        propertyAreasDaa.set(key, areaDaa);
-        loadedProperties.add(key);
-
-        const group = L.geoJSON({ type: 'FeatureCollection', features }, {
-          interactive: true,
-          bubblingMouseEvents: false,
-          style: selectedProperties.has(key) ? selectedStyle : unselectedStyle,
-          onEachFeature(feature, layer) {
-            layer.options.bubblingMouseEvents = false;
-            layer.on('click', () => toggleProperty(key));
-            layer.bindTooltip(`Gnr/Bnr ${key} · ca. ${formatDaa(areaDaa)} daa`, {
-              sticky: true,
-              direction: 'top'
-            });
-          }
-        }).addTo(map);
-
-        propertyLayers.set(key, group);
-        const bounds = group.getBounds();
-        if (bounds.isValid()) {
-          combinedBounds = combinedBounds ? combinedBounds.extend(bounds) : L.latLngBounds(bounds);
-        }
-
-        applyPropertyStyle(key);
-        updatePropertyControl();
-      } catch (error) {
-        console.warn(`${key}:`, error);
-        missingProperties.add(key);
-        selectedProperties.delete(key);
-        updatePropertyControl();
-      }
-    }
-
-    function toggleProperty(key) {
-      if (missingProperties.has(key)) return;
-
-      if (selectedProperties.has(key)) selectedProperties.delete(key);
-      else selectedProperties.add(key);
-
-      applyPropertyStyle(key);
-      saveSelection();
-      updatePropertyControl();
-    }
-
-    function applyPropertyStyle(key) {
-      const group = propertyLayers.get(key);
-      if (!group) return;
-      group.setStyle(selectedProperties.has(key) ? selectedStyle : unselectedStyle);
-      if (selectedProperties.has(key)) group.bringToFront();
-    }
-
-    function selectedAreaDaa() {
-      let total = 0;
-      selectedProperties.forEach(key => { total += propertyAreasDaa.get(key) || 0; });
-      return total;
-    }
-
-    function formatDaa(value) {
-      return Math.round(value).toLocaleString('nb-NO');
-    }
-
-    function loadSavedSelection() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    }
-
-    function saveSelection() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...selectedProperties])); }
-      catch {}
-    }
-
-    function addPropertyControl() {
-      const control = L.control({ position: 'topleft' });
-      control.onAdd = () => {
-        propertyPanel = L.DomUtil.create('section', 'property-control');
-        propertyPanel.innerHTML = `
-          <button class="collapse-button" type="button" aria-expanded="true">Velg jaktområde</button>
-          <div class="panel-body">
-            <div class="summary"><strong>Valgt: 0 daa</strong>Mål: ${TARGET_DAA.toLocaleString('nb-NO')} daa</div>
-            <p class="hint">Klikk på en teig i kartet, eller bruk knappene under. Hele gnr/bnr velges samtidig.</p>
-            <div class="property-buttons">
-              ${matrikkelEnheter.map(([gnr, bnr]) => `<button class="property-button" type="button" data-key="${gnr}/${bnr}">${gnr}/${bnr}</button>`).join('')}
-            </div>
-            <p class="status">Henter eiendommene fra Kartverket…</p>
-          </div>`;
-
-        L.DomEvent.disableClickPropagation(propertyPanel);
-        L.DomEvent.disableScrollPropagation(propertyPanel);
-
-        propertyPanel.querySelector('.collapse-button').addEventListener('click', event => {
-          const collapsed = propertyPanel.classList.toggle('is-collapsed');
-          event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
-        });
-
-        propertyPanel.querySelectorAll('.property-button').forEach(button => {
-          button.addEventListener('click', () => toggleProperty(button.dataset.key));
-        });
-
-        return propertyPanel;
-      };
-      control.addTo(map);
-    }
-
-    function updatePropertyControl() {
-      if (!propertyPanel) return;
-
-      propertyPanel.querySelectorAll('.property-button').forEach(button => {
-        const key = button.dataset.key;
-        button.classList.toggle('selected', selectedProperties.has(key));
-        button.classList.toggle('missing', missingProperties.has(key));
-        button.disabled = missingProperties.has(key);
-        button.textContent = `${key}${missingProperties.has(key) ? ' ⚠' : ''}`;
-        const area = propertyAreasDaa.get(key);
-        button.title = area ? `${key}: ca. ${formatDaa(area)} daa` : key;
-      });
-
-      const area = selectedAreaDaa();
-      const difference = area - TARGET_DAA;
-      let diffText = 'Areal oppdateres mens teigene lastes.';
-      if (propertyAreasDaa.size) {
-        diffText = difference === 0
-          ? 'Treffer målarealet.'
-          : `${difference > 0 ? '+' : '−'}${formatDaa(Math.abs(difference))} daa fra målet.`;
-      }
-
-      propertyPanel.querySelector('.summary').innerHTML = `
-        <strong>Valgt: ${formatDaa(area)} daa</strong>
-        Mål: ${TARGET_DAA.toLocaleString('nb-NO')} daa · ${diffText}`;
-
-      const total = matrikkelEnheter.length;
-      const done = loadedProperties.size + missingProperties.size;
-      const missing = [...missingProperties];
-      propertyPanel.querySelector('.status').textContent = done < total
-        ? `Lastet ${done} av ${total} eiendommer… Du kan begynne å velge allerede nå.`
-        : (missing.length
-            ? `Ferdig. Ingen geometri funnet for: ${missing.join(', ')}.`
-            : 'Alle eiendommer er lastet. Valgene lagres automatisk i denne nettleseren.');
-    }
-
-    function geometryAreaSquareMeters(geometry) {
-      if (!geometry) return 0;
-      if (geometry.type === 'Polygon') return polygonArea(geometry.coordinates);
-      if (geometry.type === 'MultiPolygon') {
-        return geometry.coordinates.reduce((sum, polygon) => sum + polygonArea(polygon), 0);
-      }
-      return 0;
-    }
-
-    function polygonArea(rings) {
-      if (!rings?.length) return 0;
-      const outer = Math.abs(ringArea(rings[0]));
-      const holes = rings.slice(1).reduce((sum, ring) => sum + Math.abs(ringArea(ring)), 0);
-      return Math.max(0, outer - holes);
-    }
-
-    function ringArea(coords) {
-      if (!coords || coords.length < 3) return 0;
-      const R = 6378137;
-      const toRad = Math.PI / 180;
-      let area = 0;
-      for (let i = 0; i < coords.length; i++) {
-        const lower = coords[i];
-        const upper = coords[(i + 1) % coords.length];
-        const lon1 = lower[0] * toRad;
-        const lon2 = upper[0] * toRad;
-        const lat1 = lower[1] * toRad;
-        const lat2 = upper[1] * toRad;
-        area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
-      }
-      return area * R * R / 2;
-    }
-  </script>
-</body>
-</html>
+<main id="map" aria-label="Kart over Grimstveit jaktområde"></main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const TARGET_DAA=10606, STORAGE_KEY='grimstveit-selected-properties-v1';
+// Opprinnelig liste + tre matrikkelenheter identifisert i dagens Eiendomsregister.
+const matrikkelEnheter=[[10,1],[10,2],[10,7],[11,2],[11,84],[12,3],[12,4],[12,5],[12,6],[12,8],[13,4],[19,10],[8,1],[11,127],[10,13]];
+const map=L.map('map',{zoomControl:false,crs:L.CRS.EPSG3857}); L.control.zoom({position:'bottomright'}).addTo(map); map.setView([59.16,8.50],11);
+L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png',{maxZoom:18,attribution:'<a href="https://www.kartverket.no/">Kartverket</a>'}).addTo(map);
+new ResizeObserver(()=>map.invalidateSize({pan:false})).observe(document.getElementById('map'));
+const normal={color:'#b5261e',weight:2.2,opacity:.95,fillColor:'#e89347',fillOpacity:.10,lineJoin:'round'}, selected={color:'#1f6f35',weight:3.5,opacity:1,fillColor:'#4f9a5d',fillOpacity:.30,lineJoin:'round'};
+const chosen=new Set(loadSaved()), layers=new Map(), areas=new Map(), missing=new Set(), loaded=new Set(); let bounds=null,panel;
+addControl(); matrikkelEnheter.forEach(([g,b])=>loadProperty(g,b));
+async function loadProperty(g,b){const key=`${g}/${b}`;try{const u=new URL('https://api.kartverket.no/eiendom/v1/geokoding');u.searchParams.set('kommunenummer','4030');u.searchParams.set('gardsnummer',g);u.searchParams.set('bruksnummer',b);u.searchParams.set('omrade','true');u.searchParams.set('utkoordsys','4258');const r=await fetch(u);if(!r.ok)throw Error(`HTTP ${r.status}`);const d=await r.json();const fs=(d.features||[]).filter(f=>f.geometry&&['Polygon','MultiPolygon'].includes(f.geometry.type)).map(f=>({...f,properties:{...f.properties,gnr:g,bnr:b}}));if(!fs.length)throw Error('ingen flater');const daa=fs.reduce((s,f)=>s+geometryArea(f.geometry)/1000,0);areas.set(key,daa);loaded.add(key);const group=L.geoJSON({type:'FeatureCollection',features:fs},{interactive:true,bubblingMouseEvents:false,style:chosen.has(key)?selected:normal,onEachFeature:(f,l)=>{l.options.bubblingMouseEvents=false;l.on('click',()=>toggle(key));l.bindTooltip(`Gnr/Bnr ${key} · ca. ${format(daa)} daa`,{sticky:true,direction:'top'});}}).addTo(map);layers.set(key,group);const bnd=group.getBounds();if(bnd.isValid()){bounds=bounds?bounds.extend(bnd):L.latLngBounds(bnd);map.fitBounds(bounds,{padding:[24,24],maxZoom:14});}apply(key);update();}catch(e){console.warn(key,e);missing.add(key);chosen.delete(key);update();}}
+function toggle(key){if(missing.has(key)||!layers.has(key))return;chosen.has(key)?chosen.delete(key):chosen.add(key);apply(key);save();update();}
+function apply(key){const g=layers.get(key);if(!g)return;g.setStyle(chosen.has(key)?selected:normal);if(chosen.has(key))g.bringToFront();}
+function total(){let n=0;chosen.forEach(k=>n+=areas.get(k)||0);return n;} function format(v){return Math.round(v).toLocaleString('nb-NO');}
+function loadSaved(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');return Array.isArray(x)?x:[]}catch{return[]}} function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify([...chosen]))}catch{}}
+function addControl(){const c=L.control({position:'topleft'});c.onAdd=()=>{panel=L.DomUtil.create('section','property-control');panel.innerHTML=`<button class="collapse" type="button" aria-expanded="true">Velg jaktområde</button><div class="panel-body"><div class="summary"><strong>Valgt: 0 daa</strong>Mål fra gammel oversikt: ${TARGET_DAA.toLocaleString('nb-NO')} daa</div><p class="hint">Klikk på en teig i kartet eller på gnr/bnr under. Alle teiger på samme matrikkelenhet velges samtidig.</p><div class="property-buttons">${matrikkelEnheter.map(([g,b])=>`<button class="property-button" type="button" data-key="${g}/${b}">${g}/${b}</button>`).join('')}</div><p class="status">Henter eiendommer fra Kartverket…</p></div>`;L.DomEvent.disableClickPropagation(panel);L.DomEvent.disableScrollPropagation(panel);panel.querySelector('.collapse').onclick=e=>{const x=panel.classList.toggle('is-collapsed');e.currentTarget.setAttribute('aria-expanded',String(!x));};panel.querySelectorAll('.property-button').forEach(btn=>btn.onclick=()=>toggle(btn.dataset.key));return panel};c.addTo(map)}
+function update(){if(!panel)return;panel.querySelectorAll('.property-button').forEach(btn=>{const k=btn.dataset.key;btn.classList.toggle('selected',chosen.has(k));btn.classList.toggle('missing',missing.has(k));btn.disabled=missing.has(k);btn.textContent=k+(missing.has(k)?' ⚠':'');const a=areas.get(k);btn.title=a?`${k}: ca. ${format(a)} daa`:k;});const a=total(),diff=a-TARGET_DAA;panel.querySelector('.summary').innerHTML=`<strong>Valgt: ${format(a)} daa</strong>Referanse fra gammel oversikt: ${TARGET_DAA.toLocaleString('nb-NO')} daa${areas.size?` · ${diff>=0?'+':'−'}${format(Math.abs(diff))} daa`:''}`;const done=loaded.size+missing.size;panel.querySelector('.status').textContent=done<matrikkelEnheter.length?`Lastet ${done} av ${matrikkelEnheter.length} matrikkelenheter…`:(missing.size?`Ferdig. Ingen geometri for: ${[...missing].join(', ')}.`:'Alle matrikkelenheter er lastet.');}
+function geometryArea(g){if(!g)return 0;if(g.type==='Polygon')return polygonArea(g.coordinates);if(g.type==='MultiPolygon')return g.coordinates.reduce((s,p)=>s+polygonArea(p),0);return 0} function polygonArea(rs){if(!rs?.length)return 0;return Math.max(0,Math.abs(ringArea(rs[0]))-rs.slice(1).reduce((s,r)=>s+Math.abs(ringArea(r)),0))} function ringArea(cs){if(!cs||cs.length<3)return 0;const R=6378137,t=Math.PI/180;let a=0;for(let i=0;i<cs.length;i++){const x=cs[i],y=cs[(i+1)%cs.length];a+=(y[0]*t-x[0]*t)*(2+Math.sin(x[1]*t)+Math.sin(y[1]*t));}return a*R*R/2}
+</script>
+</body></html>
