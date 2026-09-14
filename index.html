@@ -59,7 +59,6 @@
   </style>
 </head>
 <body>
-  <!-- redeploy trigger 2026-09-14 -->
   <main id="map" aria-label="Kart over Grimstveit jaktområde"></main>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -70,6 +69,10 @@
       crs: L.CRS.EPSG3857
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Give Leaflet a view immediately so the basemap renders while
+    // the property geometries are being fetched from Kartverket.
+    map.setView([59.16, 8.50], 11);
 
     L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
       maxZoom: 18,
@@ -146,7 +149,6 @@
 
       if (!allFeatures.length) {
         console.error('Ingen eiendomsgrenser kunne lastes fra Kartverket.');
-        map.setView([59.16, 8.50], 11);
         updatePropertyControl([], matrikkelEnheter.map(([g, b]) => `${g}/${b}`));
         return;
       }
