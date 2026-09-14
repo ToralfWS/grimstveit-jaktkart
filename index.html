@@ -19,42 +19,55 @@
       height: 100dvh;
     }
     .property-control {
-      max-width: min(19rem, calc(100vw - 5rem));
+      max-width: min(21rem, calc(100vw - 5rem));
       border: 0;
       border-radius: .75rem;
-      background: rgb(255 255 255 / 92%);
+      background: rgb(255 255 255 / 94%);
       box-shadow: 0 2px 12px rgb(0 0 0 / 22%);
       color: #172119;
-      padding: .7rem .8rem;
+      padding: .75rem .85rem;
       backdrop-filter: blur(5px);
     }
-    .property-control button {
+    .property-control > button {
       display: flex; width: 100%; align-items: center; justify-content: space-between;
       border: 0; padding: 0; background: transparent; color: inherit;
-      font: 700 .9rem/1.2 inherit; text-align: left; cursor: pointer;
+      font: 700 .92rem/1.2 inherit; text-align: left; cursor: pointer;
     }
-    .property-control button::after { content: "−"; margin-left: .75rem; font-size: 1.2rem; }
-    .property-control.is-collapsed button::after { content: "+"; }
+    .property-control > button::after { content: "−"; margin-left: .75rem; font-size: 1.2rem; }
+    .property-control.is-collapsed > button::after { content: "+"; }
+    .property-control .panel-body { display: block; }
+    .property-control.is-collapsed .panel-body { display: none; }
+    .property-control .summary {
+      margin: .65rem 0 .5rem;
+      padding: .55rem .6rem;
+      border-radius: .55rem;
+      background: #eef6ec;
+      border: 1px solid #b9d1b3;
+      font-size: .82rem;
+      line-height: 1.35;
+    }
+    .property-control .summary strong { display: block; font-size: .95rem; }
     .property-control ul {
-      display: flex; flex-wrap: wrap; gap: .35rem; margin: .65rem 0 .25rem; padding: 0;
+      display: flex; flex-wrap: wrap; gap: .35rem; margin: .55rem 0 .45rem; padding: 0;
       list-style: none;
     }
-    .property-control.is-collapsed ul, .property-control.is-collapsed p { display: none; }
     .property-control li {
       border: 1px solid #b46a37; border-radius: 999px; background: #fff8ee;
-      padding: .18rem .45rem; font-size: .78rem; font-weight: 650;
+      padding: .22rem .48rem; font-size: .78rem; font-weight: 650; cursor: pointer;
+      user-select: none;
     }
-    .property-control li.missing { border-color: #999; background: #f2f2f2; color: #777; }
-    .property-control p { margin: .55rem 0 0; color: #555; font-size: .72rem; line-height: 1.35; }
+    .property-control li.selected { border-color: #2f6f3e; background: #dfeedd; color: #174a25; }
+    .property-control li.missing { border-color: #999; background: #f2f2f2; color: #777; cursor: default; }
+    .property-control p { margin: .45rem 0 0; color: #555; font-size: .72rem; line-height: 1.35; }
+    .property-control .hint { color: #334; }
     .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
     .leaflet-control-attribution { max-width: calc(100vw - 1rem); font-size: 10px; }
-    .leaflet-popup-content { margin: .75rem 1rem; }
     @media (max-width: 600px) {
       .leaflet-top { top: env(safe-area-inset-top); }
       .leaflet-bottom { bottom: env(safe-area-inset-bottom); }
       .leaflet-left { left: env(safe-area-inset-left); }
       .leaflet-right { right: env(safe-area-inset-right); }
-      .property-control { padding: .65rem .7rem; }
+      .property-control { padding: .65rem .7rem; max-width: min(19rem, calc(100vw - 4.5rem)); }
     }
   </style>
 </head>
@@ -63,6 +76,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
+    const TARGET_DAA = 10606;
+    const STORAGE_KEY = 'grimstveit-selected-properties-v1';
+
     const mapElement = document.getElementById('map');
     const map = L.map('map', {
       zoomControl: false,
@@ -70,8 +86,6 @@
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Give Leaflet a view immediately so the basemap renders while
-    // the property geometries are being fetched from Kartverket.
     map.setView([59.16, 8.50], 11);
 
     L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
@@ -81,17 +95,24 @@
       attribution: '<a href="https://www.kartverket.no/">Kartverket</a>'
     }).addTo(map);
 
-    const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize({ pan: false });
-    });
+    const resizeObserver = new ResizeObserver(() => map.invalidateSize({ pan: false }));
     resizeObserver.observe(mapElement);
 
-    const propertyStyle = {
+    const unselectedStyle = {
       color: '#b5261e',
-      weight: 2.5,
-      opacity: 1,
+      weight: 2.2,
+      opacity: 0.95,
       fillColor: '#e89347',
-      fillOpacity: 0.10,
+      fillOpacity: 0.08,
+      lineJoin: 'round'
+    };
+
+    const selectedStyle = {
+      color: '#1f6f35',
+      weight: 3.5,
+      opacity: 1,
+      fillColor: '#4f9a5d',
+      fillOpacity: 0.24,
       lineJoin: 'round'
     };
 
@@ -101,6 +122,11 @@
       [12, 3], [12, 4], [12, 5], [12, 6], [12, 8],
       [13, 4], [19, 10], [8, 1]
     ];
+
+    const selectedProperties = new Set(loadSavedSelection());
+    const propertyLayers = new Map();
+    const propertyAreasDaa = new Map();
+    const missingProperties = new Set();
 
     addPropertyControl(matrikkelEnheter);
     loadOfficialPropertyBoundaries();
@@ -125,11 +151,7 @@
             .filter(feature => feature.geometry && ['Polygon', 'MultiPolygon'].includes(feature.geometry.type))
             .map(feature => ({
               ...feature,
-              properties: {
-                ...feature.properties,
-                gnr,
-                bnr
-              }
+              properties: { ...feature.properties, gnr, bnr }
             }));
 
           if (!features.length) throw new Error(`${gnr}/${bnr}: ingen flater returnert`);
@@ -139,35 +161,45 @@
 
       results.forEach((result, index) => {
         const [gnr, bnr] = matrikkelEnheter[index];
+        const key = `${gnr}/${bnr}`;
         if (result.status === 'fulfilled') {
           allFeatures.push(...result.value.features);
         } else {
           console.warn(result.reason);
-          missing.push(`${gnr}/${bnr}`);
+          missing.push(key);
+          missingProperties.add(key);
+          selectedProperties.delete(key);
         }
       });
 
       if (!allFeatures.length) {
         console.error('Ingen eiendomsgrenser kunne lastes fra Kartverket.');
-        updatePropertyControl([], matrikkelEnheter.map(([g, b]) => `${g}/${b}`));
+        updatePropertyControl();
         return;
       }
 
-      const featureCollection = {
-        type: 'FeatureCollection',
-        features: allFeatures
-      };
+      allFeatures.forEach(feature => {
+        const key = `${feature.properties.gnr}/${feature.properties.bnr}`;
+        const areaDaa = geometryAreaSquareMeters(feature.geometry) / 1000;
+        propertyAreasDaa.set(key, (propertyAreasDaa.get(key) || 0) + areaDaa);
+      });
 
-      const propertiesLayer = L.geoJSON(featureCollection, {
-        style: propertyStyle,
+      const propertiesLayer = L.geoJSON({ type: 'FeatureCollection', features: allFeatures }, {
+        style(feature) {
+          const key = `${feature.properties.gnr}/${feature.properties.bnr}`;
+          return selectedProperties.has(key) ? selectedStyle : unselectedStyle;
+        },
         onEachFeature(feature, layer) {
-          const { gnr, bnr, hovedområde, objekttype, lokalid } = feature.properties;
-          const details = [
-            objekttype ? `Type: ${objekttype}` : null,
-            hovedområde === true ? 'Hovedteig' : null,
-            lokalid ? `Teig-ID: ${lokalid}` : null
-          ].filter(Boolean).join('<br>');
-          layer.bindPopup(`<strong>Gnr/Bnr ${gnr}/${bnr}</strong><br>Nissedal kommune${details ? `<br>${details}` : ''}`);
+          const key = `${feature.properties.gnr}/${feature.properties.bnr}`;
+          if (!propertyLayers.has(key)) propertyLayers.set(key, []);
+          propertyLayers.get(key).push(layer);
+
+          layer.on('click', event => {
+            L.DomEvent.stopPropagation(event);
+            toggleProperty(key);
+          });
+
+          layer.bindTooltip(`Gnr/Bnr ${key}`, { sticky: true, direction: 'top' });
         }
       }).addTo(map);
 
@@ -176,8 +208,53 @@
         map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 });
       }
 
-      const loadedLabels = [...new Set(allFeatures.map(feature => `${feature.properties.gnr}/${feature.properties.bnr}`))];
-      updatePropertyControl(loadedLabels, missing);
+      saveSelection();
+      updatePropertyControl();
+    }
+
+    function toggleProperty(key) {
+      if (missingProperties.has(key) || !propertyLayers.has(key)) return;
+      if (selectedProperties.has(key)) selectedProperties.delete(key);
+      else selectedProperties.add(key);
+
+      applyPropertyStyle(key);
+      saveSelection();
+      updatePropertyControl();
+    }
+
+    function applyPropertyStyle(key) {
+      const selected = selectedProperties.has(key);
+      (propertyLayers.get(key) || []).forEach(layer => {
+        layer.setStyle(selected ? selectedStyle : unselectedStyle);
+        if (selected) layer.bringToFront();
+      });
+    }
+
+    function selectedAreaDaa() {
+      let total = 0;
+      selectedProperties.forEach(key => {
+        total += propertyAreasDaa.get(key) || 0;
+      });
+      return total;
+    }
+
+    function formatDaa(value) {
+      return Math.round(value).toLocaleString('nb-NO');
+    }
+
+    function loadSavedSelection() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveSelection() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...selectedProperties]));
+      } catch {}
     }
 
     let propertyPanel;
@@ -186,32 +263,92 @@
       control.onAdd = () => {
         propertyPanel = L.DomUtil.create('section', 'property-control');
         propertyPanel.innerHTML = `
-          <button type="button" aria-expanded="true">Eiendomsgrenser</button>
-          <ul>${entries.map(([gnr, bnr]) => `<li>${gnr}/${bnr}</li>`).join('')}</ul>
-          <p>Henter offisielle teiggeometrier fra Kartverkets åpne eiendoms-API…</p>`;
+          <button type="button" aria-expanded="true">Velg jaktområde</button>
+          <div class="panel-body">
+            <div class="summary"><strong>Valgt: 0 daa</strong>Mål: ${TARGET_DAA.toLocaleString('nb-NO')} daa</div>
+            <p class="hint">Klikk på en teig i kartet. Da velges eller fjernes <strong>alle teiger</strong> som tilhører samme gnr/bnr.</p>
+            <ul>${entries.map(([gnr, bnr]) => `<li data-key="${gnr}/${bnr}">${gnr}/${bnr}</li>`).join('')}</ul>
+            <p class="status">Henter offisielle teiggeometrier fra Kartverket…</p>
+          </div>`;
+
         L.DomEvent.disableClickPropagation(propertyPanel);
-        propertyPanel.querySelector('button').addEventListener('click', event => {
+        L.DomEvent.disableScrollPropagation(propertyPanel);
+
+        propertyPanel.querySelector(':scope > button').addEventListener('click', event => {
           const collapsed = propertyPanel.classList.toggle('is-collapsed');
           event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
         });
+
+        propertyPanel.querySelectorAll('li[data-key]').forEach(item => {
+          item.addEventListener('click', () => toggleProperty(item.dataset.key));
+        });
+
         return propertyPanel;
       };
       control.addTo(map);
     }
 
-    function updatePropertyControl(loaded, missing) {
+    function updatePropertyControl() {
       if (!propertyPanel) return;
-      const loadedSet = new Set(loaded);
-      const missingSet = new Set(missing);
-      const items = matrikkelEnheter.map(([gnr, bnr]) => {
-        const label = `${gnr}/${bnr}`;
-        const isMissing = missingSet.has(label) && !loadedSet.has(label);
-        return `<li${isMissing ? ' class="missing"' : ''}>${label}${isMissing ? ' ⚠' : ''}</li>`;
-      }).join('');
-      propertyPanel.querySelector('ul').innerHTML = items;
-      propertyPanel.querySelector('p').textContent = missing.length
-        ? `Kartverket-data lastet. Ingen geometri funnet for: ${missing.join(', ')}.`
-        : 'Offisielle teiggeometrier lastet fra Kartverkets åpne eiendoms-API.';
+
+      propertyPanel.querySelectorAll('li[data-key]').forEach(item => {
+        const key = item.dataset.key;
+        item.classList.toggle('selected', selectedProperties.has(key));
+        item.classList.toggle('missing', missingProperties.has(key));
+        item.textContent = `${key}${missingProperties.has(key) ? ' ⚠' : ''}`;
+        const area = propertyAreasDaa.get(key);
+        item.title = area ? `${key}: ca. ${formatDaa(area)} daa` : key;
+      });
+
+      const area = selectedAreaDaa();
+      const difference = area - TARGET_DAA;
+      const diffText = propertyAreasDaa.size
+        ? `${difference === 0 ? 'Treffer målarealet.' : `${difference > 0 ? '+' : '−'}${formatDaa(Math.abs(difference))} daa fra målet.`}`
+        : 'Beregner areal…';
+
+      propertyPanel.querySelector('.summary').innerHTML = `
+        <strong>Valgt: ${formatDaa(area)} daa</strong>
+        Mål: ${TARGET_DAA.toLocaleString('nb-NO')} daa · ${diffText}`;
+
+      const missing = [...missingProperties];
+      propertyPanel.querySelector('.status').textContent = propertyAreasDaa.size
+        ? (missing.length
+          ? `Kartverket-data lastet. Ingen geometri funnet for: ${missing.join(', ')}.`
+          : 'Kartverket-data lastet. Valgene lagres automatisk i denne nettleseren.')
+        : 'Henter offisielle teiggeometrier fra Kartverket…';
+    }
+
+    function geometryAreaSquareMeters(geometry) {
+      if (!geometry) return 0;
+      if (geometry.type === 'Polygon') return polygonArea(geometry.coordinates);
+      if (geometry.type === 'MultiPolygon') {
+        return geometry.coordinates.reduce((sum, polygon) => sum + polygonArea(polygon), 0);
+      }
+      return 0;
+    }
+
+    function polygonArea(rings) {
+      if (!rings?.length) return 0;
+      const outer = Math.abs(ringArea(rings[0]));
+      const holes = rings.slice(1).reduce((sum, ring) => sum + Math.abs(ringArea(ring)), 0);
+      return Math.max(0, outer - holes);
+    }
+
+    function ringArea(coords) {
+      if (!coords || coords.length < 3) return 0;
+      const R = 6378137;
+      const toRad = Math.PI / 180;
+      let area = 0;
+      for (let i = 0; i < coords.length; i++) {
+        const lower = coords[i];
+        const upper = coords[(i + 1) % coords.length];
+        const lon1 = lower[0] * toRad;
+        const lon2 = upper[0] * toRad;
+        const lat1 = lower[1] * toRad;
+        const lat2 = upper[1] * toRad;
+        area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+      }
+      return area * R * R / 2;
     }
   </script>
 </body>
