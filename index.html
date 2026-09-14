@@ -19,7 +19,7 @@
       height: 100dvh;
     }
     .property-control {
-      max-width: min(17rem, calc(100vw - 5rem));
+      max-width: min(19rem, calc(100vw - 5rem));
       border: 0;
       border-radius: .75rem;
       background: rgb(255 255 255 / 92%);
@@ -44,6 +44,7 @@
       border: 1px solid #b46a37; border-radius: 999px; background: #fff8ee;
       padding: .18rem .45rem; font-size: .78rem; font-weight: 650;
     }
+    .property-control li.missing { border-color: #999; background: #f2f2f2; color: #777; }
     .property-control p { margin: .55rem 0 0; color: #555; font-size: .72rem; line-height: 1.35; }
     .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
     .leaflet-control-attribution { max-width: calc(100vw - 1rem); font-size: 10px; }
@@ -83,51 +84,131 @@
 
     const propertyStyle = {
       color: '#b5261e',
-      weight: 3,
+      weight: 2.5,
       opacity: 1,
       fillColor: '#e89347',
-      fillOpacity: 0.13,
+      fillOpacity: 0.10,
       lineJoin: 'round'
     };
 
-    fetch('data/grimstveit-eiendommer.geojson')
-      .then(response => {
-        if (!response.ok) throw new Error(`Kunne ikke laste kartdata (${response.status})`);
-        return response.json();
-      })
-      .then(data => {
-        const properties = L.geoJSON(data, {
-          style: propertyStyle,
-          onEachFeature(feature, layer) {
-            const { gnr, bnr } = feature.properties;
-            layer.bindPopup(`<strong>Gnr/Bnr ${gnr}/${bnr}</strong><br>Nissedal kommune`);
-          }
-        }).addTo(map);
-        map.fitBounds(properties.getBounds(), { padding: [24, 24], maxZoom: 15 });
-        addPropertyControl(data.features);
-      })
-      .catch(error => {
-        console.error(error);
-        map.setView([59.16, 8.50], 11);
+    const matrikkelEnheter = [
+      [10, 1], [10, 2], [10, 7],
+      [11, 2], [11, 84],
+      [12, 3], [12, 4], [12, 5], [12, 6], [12, 8],
+      [13, 4], [19, 10], [8, 1]
+    ];
+
+    addPropertyControl(matrikkelEnheter);
+    loadOfficialPropertyBoundaries();
+
+    async function loadOfficialPropertyBoundaries() {
+      const allFeatures = [];
+      const missing = [];
+
+      const results = await Promise.allSettled(
+        matrikkelEnheter.map(async ([gnr, bnr]) => {
+          const url = new URL('https://api.kartverket.no/eiendom/v1/geokoding');
+          url.searchParams.set('kommunenummer', '4030');
+          url.searchParams.set('gardsnummer', gnr);
+          url.searchParams.set('bruksnummer', bnr);
+          url.searchParams.set('omrade', 'true');
+          url.searchParams.set('utkoordsys', '4258');
+
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`${gnr}/${bnr}: HTTP ${response.status}`);
+          const data = await response.json();
+          const features = (data.features || [])
+            .filter(feature => feature.geometry && ['Polygon', 'MultiPolygon'].includes(feature.geometry.type))
+            .map(feature => ({
+              ...feature,
+              properties: {
+                ...feature.properties,
+                gnr,
+                bnr
+              }
+            }));
+
+          if (!features.length) throw new Error(`${gnr}/${bnr}: ingen flater returnert`);
+          return { gnr, bnr, features };
+        })
+      );
+
+      results.forEach((result, index) => {
+        const [gnr, bnr] = matrikkelEnheter[index];
+        if (result.status === 'fulfilled') {
+          allFeatures.push(...result.value.features);
+        } else {
+          console.warn(result.reason);
+          missing.push(`${gnr}/${bnr}`);
+        }
       });
 
-    function addPropertyControl(features) {
+      if (!allFeatures.length) {
+        console.error('Ingen eiendomsgrenser kunne lastes fra Kartverket.');
+        map.setView([59.16, 8.50], 11);
+        updatePropertyControl([], matrikkelEnheter.map(([g, b]) => `${g}/${b}`));
+        return;
+      }
+
+      const featureCollection = {
+        type: 'FeatureCollection',
+        features: allFeatures
+      };
+
+      const propertiesLayer = L.geoJSON(featureCollection, {
+        style: propertyStyle,
+        onEachFeature(feature, layer) {
+          const { gnr, bnr, hovedområde, objekttype, lokalid } = feature.properties;
+          const details = [
+            objekttype ? `Type: ${objekttype}` : null,
+            hovedområde === true ? 'Hovedteig' : null,
+            lokalid ? `Teig-ID: ${lokalid}` : null
+          ].filter(Boolean).join('<br>');
+          layer.bindPopup(`<strong>Gnr/Bnr ${gnr}/${bnr}</strong><br>Nissedal kommune${details ? `<br>${details}` : ''}`);
+        }
+      }).addTo(map);
+
+      const bounds = propertiesLayer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 });
+      }
+
+      const loadedLabels = [...new Set(allFeatures.map(feature => `${feature.properties.gnr}/${feature.properties.bnr}`))];
+      updatePropertyControl(loadedLabels, missing);
+    }
+
+    let propertyPanel;
+    function addPropertyControl(entries) {
       const control = L.control({ position: 'topleft' });
       control.onAdd = () => {
-        const panel = L.DomUtil.create('section', 'property-control');
-        const labels = features.map(({ properties }) => `${properties.gnr}/${properties.bnr}`);
-        panel.innerHTML = `
-          <button type="button" aria-expanded="true">Eiendommer (${labels.length})</button>
-          <ul>${labels.map(label => `<li>${label}</li>`).join('')}</ul>
-          <p>Gnr/Bnr 11/84 mangler og er ikke tatt med i denne versjonen.</p>`;
-        L.DomEvent.disableClickPropagation(panel);
-        panel.querySelector('button').addEventListener('click', event => {
-          const collapsed = panel.classList.toggle('is-collapsed');
+        propertyPanel = L.DomUtil.create('section', 'property-control');
+        propertyPanel.innerHTML = `
+          <button type="button" aria-expanded="true">Eiendomsgrenser</button>
+          <ul>${entries.map(([gnr, bnr]) => `<li>${gnr}/${bnr}</li>`).join('')}</ul>
+          <p>Henter offisielle teiggeometrier fra Kartverkets åpne eiendoms-API…</p>`;
+        L.DomEvent.disableClickPropagation(propertyPanel);
+        propertyPanel.querySelector('button').addEventListener('click', event => {
+          const collapsed = propertyPanel.classList.toggle('is-collapsed');
           event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
         });
-        return panel;
+        return propertyPanel;
       };
       control.addTo(map);
+    }
+
+    function updatePropertyControl(loaded, missing) {
+      if (!propertyPanel) return;
+      const loadedSet = new Set(loaded);
+      const missingSet = new Set(missing);
+      const items = matrikkelEnheter.map(([gnr, bnr]) => {
+        const label = `${gnr}/${bnr}`;
+        const isMissing = missingSet.has(label) && !loadedSet.has(label);
+        return `<li${isMissing ? ' class="missing"' : ''}>${label}${isMissing ? ' ⚠' : ''}</li>`;
+      }).join('');
+      propertyPanel.querySelector('ul').innerHTML = items;
+      propertyPanel.querySelector('p').textContent = missing.length
+        ? `Kartverket-data lastet. Ingen geometri funnet for: ${missing.join(', ')}.`
+        : 'Offisielle teiggeometrier lastet fra Kartverkets åpne eiendoms-API.';
     }
   </script>
 </body>
